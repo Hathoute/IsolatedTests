@@ -1,10 +1,13 @@
 ﻿using System.Reflection;
 using System.Runtime.Loader;
+using NLog;
 
 namespace IsolatedTests;
 
 internal class TestAssemblyLoadContext : AssemblyLoadContext {
-
+    
+    private static readonly Logger Logger = LogManager.GetCurrentClassLogger();
+    
     private readonly AssemblyDependencyResolver _resolver;
 
     internal TestAssemblyLoadContext(string baseAssemblyPath) : base(isCollectible: true) {
@@ -22,12 +25,12 @@ internal class TestAssemblyLoadContext : AssemblyLoadContext {
     protected override Assembly Load(AssemblyName assemblyName)
     {
         var assemblyPath = _resolver.ResolveAssemblyToPath(assemblyName);
-        if (assemblyPath != null)
-        {
-            Console.WriteLine($"Loading assembly {assemblyPath} into the TestAssemblyLoadContext");
-            return LoadFromAssemblyPath(assemblyPath);
+        if (assemblyPath == null) {
+            return null;
         }
 
-        return null;
+        Logger.Info($"Loading assembly {assemblyPath} into the TestAssemblyLoadContext");
+        return LoadFromAssemblyPath(assemblyPath);
+
     }
 }

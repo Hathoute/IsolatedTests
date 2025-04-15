@@ -12,4 +12,11 @@
     <PackageReference Include="UnsafeCLR" Version="0.0.1-alpha" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Content Remove="Tests\**" />
+    <Compile Remove="Tests\**" />
+    <EmbeddedResource Remove="Tests\**" />
+    <None Remove="Tests\**" />
+  </ItemGroup>
+
 </Project>

@@ -1,6 +1,6 @@
 ﻿using System.Reflection;
 using System.Reflection.Emit;
-using Microsoft.Extensions.Logging;
+using Microsoft.VisualBasic;
 using NLog;
 using UnsafeCLR;
 
@@ -25,7 +25,7 @@ internal class TestClassInterceptor {
     private static MethodInfo GetMethodInfo<T1, T2>(Action<T1, T2> action) => action.Method;
     
     private readonly Type _executingContextTestType;
-    private WeakReference _weakTestAssemblyReference;
+    private TestAssemblyLoadContext? _testAssemblyLoadContext;
     private WeakReference _weakTestAssembly;
     private WeakReference _weakTestType;
     private bool _loaded;
@@ -105,17 +105,19 @@ internal class TestClassInterceptor {
             return false;
         }
             
-        if (_weakTestAssemblyReference.Target is not TestAssemblyLoadContext assemblyLoadContext) {
+        if (_testAssemblyLoadContext is null) {
             throw new InvalidOperationException("TestAssemblyLoadContext was null before");
         }
         
         Logger.Debug("Unloading assembly load context for isolated type {0}", _executingContextTestType.FullName);
-        assemblyLoadContext.Unload();
+        _testAssemblyLoadContext.Unload();
+        _testAssemblyLoadContext = null;
         return true;
     }
 
     private void LoadIsolatedAssembly() {
-        var loadContext = new TestAssemblyLoadContext(".");
+        var baseAssemblyPath = GetAssemblyBasePath(_executingContextTestType);
+        var loadContext = new TestAssemblyLoadContext(baseAssemblyPath);
         var assemblyPath = _executingContextTestType.Assembly.Location;
         var assembly = loadContext.LoadFromAssemblyPath(assemblyPath);
         if (assembly is null) {
@@ -131,7 +133,7 @@ internal class TestClassInterceptor {
             throw new InvalidOperationException($"Type '{testType}' was not found in the isolated assembly '{assembly.FullName}'");
         }
         
-        _weakTestAssemblyReference = new WeakReference(loadContext);
+        _testAssemblyLoadContext = loadContext;
         _weakTestAssembly = new WeakReference(assembly);
         _weakTestType = new WeakReference(testType);
         _loaded = true;
@@ -204,5 +206,12 @@ internal class TestClassInterceptor {
         il.EmitCall(OpCodes.Call, GetMethodInfo<object, string>(TestMethod), null);
         il.Emit(OpCodes.Ret);
         return dynamicMethod;
+    }
+
+    private static string GetAssemblyBasePath(Type type) {
+        var basePath = type.Assembly.Location;
+        return string.IsNullOrEmpty(basePath)
+            ? Directory.GetCurrentDirectory()
+            : basePath;
     }
 }

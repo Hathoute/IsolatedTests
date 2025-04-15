@@ -1,6 +1,6 @@
-﻿namespace CoreCLRManager.Annotation;
+﻿namespace IsolatedTests.Attribute;
 
 [AttributeUsage(AttributeTargets.Class)]
-public class IsolatedTestAttribute : Attribute {
+public class IsolatedTestAttribute : System.Attribute {
     
 }

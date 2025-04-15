@@ -1,10 +1,10 @@
 ﻿using System.Reflection;
 using System.Runtime.CompilerServices;
-using CoreCLRManager.Annotation;
+using IsolatedTests.Attribute;
 
 namespace IsolatedTests;
 
-public static class IsolatedTests {
+public static class TestIsolator {
 
     private const string LoadedEnvVariableName = "ISOLATED_TESTS_LOADED";
     
