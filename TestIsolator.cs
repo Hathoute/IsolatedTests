@@ -2,6 +2,7 @@
 using System.Runtime.CompilerServices;
 using IsolatedTests.Attribute;
 
+[assembly: InternalsVisibleTo("Tests")]
 namespace IsolatedTests;
 
 public static class TestIsolator {
