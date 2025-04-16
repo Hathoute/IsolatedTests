@@ -23,6 +23,7 @@ internal class TestClassInterceptor {
     private static Dictionary<Type, TestClassInterceptor> registeredInterceptors = new ();
     
     private static MethodInfo GetMethodInfo<T1, T2>(Action<T1, T2> action) => action.Method;
+    private static MethodInfo GetMethodInfo<T1, T2, TRet>(Func<T1, T2, TRet> func) => func.Method;
     
     private readonly Type _executingContextTestType;
     private TestAssemblyLoadContext? _testAssemblyLoadContext;
@@ -63,10 +64,10 @@ internal class TestClassInterceptor {
 
     private void PrepareIsolatedTestMethod(MethodInfo testMethod) {
         if (testMethod.GetParameters().Length > 0) {
-            throw new NotSupportedException($"Isolated test {testMethod.Name} should not have parameters.");
+            throw new NotSupportedException($"Isolated test {testMethod.Name} should not have parameters");
         }
 
-        var interceptor = CreateInterceptorForTestMethod(testMethod.Name);
+        var interceptor = CreateInterceptorForTestMethod(testMethod);
         // Keep a reference to the interceptor method so that it won't be potentially garbage collected.
         // TODO: find out if DynamicMethods can be garbage collected
         _interceptorMethods.Add(testMethod.Name, interceptor);
@@ -139,7 +140,7 @@ internal class TestClassInterceptor {
         _loaded = true;
     }
 
-    private void RunTestMethod(object original, string testMethodName) {
+    private Task RunTestMethod(object original, string testMethodName) {
         if (!_loaded) {
             LoadIsolatedAssembly();
         }
@@ -148,7 +149,7 @@ internal class TestClassInterceptor {
         var isolatedType = _weakTestType.Target as Type;
 
         var isolatedTestMethod = isolatedType.GetMethod(testMethodName, BindingFlags.Public | BindingFlags.Instance);
-        isolatedTestMethod.Invoke(isolatedInstance, null);
+        return isolatedTestMethod.Invoke(isolatedInstance, null) as Task;
     }
 
     private object GetIsolatedInstance(object original) {
@@ -189,21 +190,38 @@ internal class TestClassInterceptor {
         interceptor.RunTestMethod(instance, testMethodName);
     }
 
+    // ReSharper disable once MemberCanBePrivate.Global
+    public static Task TestAsyncMethod(object instance, string testMethodName) {
+        var type = instance.GetType();
+        var interceptor = registeredInterceptors[type];
+        return interceptor.RunTestMethod(instance, testMethodName);
+    }
+
     private static bool HasAnyAttribute(MethodInfo methodInfo, string[] attributes) {
         return methodInfo.GetCustomAttributes()
             .Select(a => a.GetType())
             .Any(t => attributes.Contains(t.FullName));
     }
 
-    private static DynamicMethod CreateInterceptorForTestMethod(string testMethodName) {
-        var dynamicMethod = new DynamicMethod("Interceptor_" + testMethodName, 
-            typeof(void),
+    private static DynamicMethod CreateInterceptorForTestMethod(MethodInfo testMethod) {
+        var dynamicMethod = new DynamicMethod("Interceptor_" + testMethod.Name, 
+            testMethod.ReturnType,
             new []{typeof (object)});
         
         var il = dynamicMethod.GetILGenerator();
         il.Emit(OpCodes.Ldarg_0);
-        il.Emit(OpCodes.Ldstr, testMethodName);
-        il.EmitCall(OpCodes.Call, GetMethodInfo<object, string>(TestMethod), null);
+        il.Emit(OpCodes.Ldstr, testMethod.Name);
+        
+        if (testMethod.ReturnType == typeof(void)) {
+            il.EmitCall(OpCodes.Call, GetMethodInfo<object, string>(TestMethod), null);
+        } 
+        else if (testMethod.ReturnType == typeof(Task)) {
+            il.EmitCall(OpCodes.Call, GetMethodInfo<object, string, Task>(TestAsyncMethod), null);
+        }
+        else {
+            throw new InvalidOperationException($"Isolated test {testMethod.Name} should either return void or a Task (async)");
+        }
+        
         il.Emit(OpCodes.Ret);
         return dynamicMethod;
     }
