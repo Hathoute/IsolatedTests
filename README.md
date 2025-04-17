@@ -20,7 +20,8 @@ Add the `IsolatedTests` package to your test project:
 dotnet add package IsolatedTests
 ```
 
-And make sure your test project targets `.NET 6`, `.NET 7`, or `.NET 8`.
+- Make sure your test project targets `.NET 6`, `.NET 7`, or `.NET 8`.
+- Make sure to disable **Optimization** or specifically **JIT inlining** so that [test methods are not potentially inlined](https://github.com/Hathoute/UnsafeCLR?tab=readme-ov-file#limitations).
 
 
 ###  Setup
@@ -107,7 +108,7 @@ This approach ensures that static state, global configuration, or other test-rel
 
 ## Compatibility
 
--  .NET 6 (**ARM64** is not supported)
+-  .NET 6 ([**ARM64** is not supported](https://github.com/Hathoute/UnsafeCLR?tab=readme-ov-file#limitations))
 -  .NET 7
 -  .NET 8
 

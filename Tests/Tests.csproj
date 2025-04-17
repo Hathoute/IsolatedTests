@@ -9,6 +9,10 @@
     <TargetFrameworks>net8.0;net6.0;net7.0</TargetFrameworks>
   </PropertyGroup>
 
+  <PropertyGroup Condition=" '$(Configuration)' == 'Release' ">
+    <Optimize>false</Optimize>
+  </PropertyGroup>
+
   <ItemGroup>
     <PackageReference Include="coverlet.collector" Version="6.0.0"/>
     <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.13.0" />
