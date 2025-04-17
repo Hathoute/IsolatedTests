@@ -13,10 +13,16 @@
   </ItemGroup>
 
   <ItemGroup>
+    <None Include="README.md" Pack="true" PackagePath="\"/>
+  </ItemGroup>
+  <PropertyGroup>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <PackageLicenseUrl>https://github.com/Hathoute/IsolatedTests/blob/main/LICENSE</PackageLicenseUrl>
+  </PropertyGroup>
+
+  <ItemGroup>
     <Content Remove="Tests\**" />
     <Compile Remove="Tests\**" />
-    <Content Include=".github\workflows\build-deploy.yml" />
-    <Content Include=".github\workflows\build-test.yml" />
     <EmbeddedResource Remove="Tests\**" />
     <None Remove="Tests\**" />
   </ItemGroup>
