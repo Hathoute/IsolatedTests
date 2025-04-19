@@ -1,6 +1,6 @@
 # IsolatedTests
 
-**IsolatedTests** is a .NET library that enables test class isolation in your test suites using a simple attribute-based approach. It supports .NET 6, .NET 7, and .NET 8.
+**IsolatedTests** is a .NET library that enables test class isolation in your test suites using a simple attribute-based approach. It supports .NET 6, .NET 7, .NET 8 and .NET 9.
 
 
 ## Features
@@ -111,6 +111,7 @@ This approach ensures that static state, global configuration, or other test-rel
 -  .NET 6 ([**ARM64** is not supported](https://github.com/Hathoute/UnsafeCLR?tab=readme-ov-file#limitations))
 -  .NET 7
 -  .NET 8
+-  .NET 9
 
 
 ## License
