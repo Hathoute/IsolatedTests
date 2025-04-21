@@ -20,7 +20,7 @@ Add the `IsolatedTests` package to your test project:
 dotnet add package IsolatedTests
 ```
 
-- Make sure your test project targets `.NET 6`, `.NET 7`, or `.NET 8`.
+- Make sure your test project targets `.NET 6+`.
 - Make sure to disable **Optimization** or specifically **JIT inlining** so that [test methods are not potentially inlined](https://github.com/Hathoute/UnsafeCLR?tab=readme-ov-file#limitations).
 
 
@@ -112,6 +112,7 @@ This approach ensures that static state, global configuration, or other test-rel
 -  .NET 7
 -  .NET 8
 -  .NET 9
+-  .NET 10
 
 
 ## License
