@@ -11,18 +11,25 @@ internal class TestClassInterceptor {
 
     private static readonly string[] TestAttributes = {
         "Xunit.FactAttribute",
-        "Microsoft.VisualStudio.TestTools.UnitTesting.TestMethodAttribute"
+        "Microsoft.VisualStudio.TestTools.UnitTesting.TestMethodAttribute",
+        // Internal Attribute used in Tests project
+        "Tests.Attribute.MyTestMethodAttribute"
     };
 
     private static readonly string[] OtherAttributes = {
         "Microsoft.VisualStudio.TestTools.UnitTesting.TestInitializeAttribute",
-        "Microsoft.VisualStudio.TestTools.UnitTesting.TestCleanupAttribute"
+        "Microsoft.VisualStudio.TestTools.UnitTesting.TestCleanupAttribute",
+        // Internal Attributes used in Tests project
+        "Tests.Attribute.MyTestInitializerAttribute",
+        "Tests.Attribute.MyTestCleanerAttribute"
     };
     
     private static Dictionary<Type, TestClassInterceptor> registeredInterceptors = new ();
     
     private static MethodInfo GetMethodInfo<T1, T2>(Action<T1, T2> action) => action.Method;
     private static MethodInfo GetMethodInfo<T1, T2, TRet>(Func<T1, T2, TRet> func) => func.Method;
+
+    private readonly bool _collectibleAssembly;
     
     private readonly Type _executingContextTestType;
     private TestAssemblyLoadContext? _testAssemblyLoadContext;
@@ -37,7 +44,9 @@ internal class TestClassInterceptor {
     private readonly Dictionary<string, MethodReplacement> _methodReplacements;
     private readonly List<Tuple<WeakReference, object>> _objectToProxy;
 
-    internal TestClassInterceptor(Type executingContextTestType) {
+    internal TestClassInterceptor(Type executingContextTestType, bool collectibleAssembly) {
+        _collectibleAssembly = collectibleAssembly;
+        
         registeredInterceptors.Add(executingContextTestType, this);
         
         _executingContextTestType = executingContextTestType;
@@ -118,7 +127,12 @@ internal class TestClassInterceptor {
         if (_testAssemblyLoadContext is null) {
             throw new InvalidOperationException("TestAssemblyLoadContext was null before");
         }
-        
+
+        if (!_collectibleAssembly) {
+            Logger.Debug("Will not unload assembly load context for type {0} since it was marked as non collectible", _executingContextTestType.FullName);
+            return true;
+        }
+
         Logger.Debug("Unloading assembly load context for isolated type {0}", _executingContextTestType.FullName);
         _testAssemblyLoadContext.Unload();
         _testAssemblyLoadContext = null;
@@ -127,7 +141,7 @@ internal class TestClassInterceptor {
 
     private void LoadIsolatedAssembly() {
         var baseAssemblyPath = GetAssemblyBasePath(_executingContextTestType);
-        var loadContext = new TestAssemblyLoadContext(baseAssemblyPath);
+        var loadContext = new TestAssemblyLoadContext(baseAssemblyPath, _collectibleAssembly);
         var assemblyPath = _executingContextTestType.Assembly.Location;
         var assembly = loadContext.LoadFromAssemblyPath(assemblyPath);
         if (assembly is null) {
@@ -164,7 +178,8 @@ internal class TestClassInterceptor {
     private object GetIsolatedInstance(object original) {
         var existing = _objectToProxy.FirstOrDefault(o => o.Item1.IsAlive && ReferenceEquals(o.Item1.Target, original));
         if (existing is not null) {
-            return existing;
+            // Return the previously created isolated instance
+            return existing.Item2;
         }
 
         var instance = CreateNewIsolatedInstance();

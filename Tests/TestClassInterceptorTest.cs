@@ -1,5 +1,6 @@
 ﻿using System.Reflection;
 using IsolatedTests;
+using Tests.Attribute;
 
 namespace Tests;
 
@@ -91,7 +92,7 @@ public class UnsupportedTest_{0} {{
         Assert.IsNotNull(type);
         
         try {
-            _ = new TestClassInterceptor(type);
+            _ = new TestClassInterceptor(type, true);
         }
         catch (Exception ex) {
             Assert.Fail("Expected no exception, but got: " + ex.Message);
@@ -105,7 +106,7 @@ public class UnsupportedTest_{0} {{
         var type = assembly.GetType(typeName);
         Assert.IsNotNull(type);
         
-        var exception = Assert.ThrowsException<InvalidOperationException>(() => _ = new TestClassInterceptor(type));
+        var exception = Assert.ThrowsException<InvalidOperationException>(() => _ = new TestClassInterceptor(type, true));
         Assert.AreEqual("Isolated test TestMethodWithReturn should either return void or a Task (async)", exception.Message);
     }
 
@@ -116,7 +117,7 @@ public class UnsupportedTest_{0} {{
         var type = assembly.GetType(typeName);
         Assert.IsNotNull(type);
         
-        var exception = Assert.ThrowsException<NotSupportedException>(() => _ = new TestClassInterceptor(type));
+        var exception = Assert.ThrowsException<NotSupportedException>(() => _ = new TestClassInterceptor(type, true));
         Assert.AreEqual("Isolated test TestMethodWithParameters should not have parameters", exception.Message);
     }
 
@@ -127,7 +128,7 @@ public class UnsupportedTest_{0} {{
         var type = assembly.GetType(typeName);
         Assert.IsNotNull(type);
         
-        var interceptor = new TestClassInterceptor(type);
+        var interceptor = new TestClassInterceptor(type, true);
         Assert.IsTrue(interceptor.DisposeOfObjects());
     }
 
@@ -138,7 +139,44 @@ public class UnsupportedTest_{0} {{
         var type = assembly.GetType(typeName);
         Assert.IsNotNull(type);
         
-        var interceptor = new TestClassInterceptor(type);
+        var interceptor = new TestClassInterceptor(type, true);
         Assert.IsFalse(interceptor.DisposeOfObjects());
+    }
+
+    [TestMethod]
+    public void TestMethodInvocationDoesNotThrow() {
+        _ = new TestClassInterceptor(typeof(ValidTestClass), true);
+        var instance = new ValidTestClass();
+        
+        // Simulate a test
+        instance.Initializer();
+        instance.TestMethod();
+        instance.Cleaner();
+        
+        // No attribute has changed since this instance only acts as a proxy
+        Assert.IsFalse(instance.Initialized);
+        Assert.IsFalse(instance.Cleaned);
+    }
+}
+
+public class ValidTestClass {
+
+    internal bool Initialized;
+    internal bool Cleaned;
+    
+    [MyTestInitializer]
+    public void Initializer() {
+        Initialized = true;
+    }
+    
+    [MyTestMethod]
+    public void TestMethod() {
+        Assert.IsTrue(Initialized);
+        Assert.IsFalse(Cleaned);
+    }
+
+    [MyTestCleaner]
+    public void Cleaner() {
+        Cleaned = true;
     }
 }
