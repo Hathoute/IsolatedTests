@@ -1,6 +1,5 @@
 ﻿using System.Reflection;
 using System.Reflection.Emit;
-using Microsoft.VisualBasic;
 using NLog;
 using UnsafeCLR;
 
@@ -78,6 +77,16 @@ internal class TestClassInterceptor {
 
     internal bool DisposeOfObjects() {
         Logger.Trace("Begin DisposeOfObjects for isolated type {0}", _executingContextTestType.FullName);
+        if (_testMethodCount == 0) {
+            Logger.Trace("Could not detect a test method in the isolated test {0}, disposing...", _executingContextTestType.FullName);
+            return true;
+        }
+        
+        if (!_loaded) {
+            Logger.Trace("Skipping disposal of objects as type {0} is not yet loaded", _executingContextTestType.FullName);
+            return false;
+        }
+        
         var collectedObjects = _objectToProxy.Where(x => !x.Item1.IsAlive)
             .ToList();
         
