@@ -10,7 +10,7 @@ internal class TestAssemblyLoadContext : AssemblyLoadContext {
     
     private readonly AssemblyDependencyResolver _resolver;
 
-    internal TestAssemblyLoadContext(string baseAssemblyPath) : base(isCollectible: true) {
+    internal TestAssemblyLoadContext(string baseAssemblyPath, bool isCollectible) : base(isCollectible) {
         _resolver = new AssemblyDependencyResolver(baseAssemblyPath);
     }
     

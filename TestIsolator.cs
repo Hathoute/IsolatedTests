@@ -9,7 +9,7 @@ public static class TestIsolator {
 
     private const string LoadedEnvVariableName = "ISOLATED_TESTS_LOADED";
     
-    public static void ModuleInitializer() {
+    public static void ModuleInitializer(bool collectibleAssemblies = true) {
         var variable = Environment.GetEnvironmentVariable(LoadedEnvVariableName);
         if (variable != null) {
             // This assembly is being run as an isolated test, we already did
@@ -23,7 +23,7 @@ public static class TestIsolator {
         var callingAssembly = Assembly.GetCallingAssembly();
         var testInterceptors = callingAssembly.GetTypes()
             .Where(t => t.IsClass && t.GetCustomAttributes(typeof(IsolatedTestAttribute), true).Length > 0)
-            .Select(t => new TestClassInterceptor(t))
+            .Select(t => new TestClassInterceptor(t, collectibleAssemblies))
             .ToList();
 
         var watcher = new InterceptorWatcher(testInterceptors);
