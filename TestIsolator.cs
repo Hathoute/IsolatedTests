@@ -9,12 +9,12 @@ public static class TestIsolator {
 
     private const string LoadedEnvVariableName = "ISOLATED_TESTS_LOADED";
     
-    public static void ModuleInitializer(bool collectibleAssemblies = true) {
+    public static bool ModuleInitializer(bool collectibleAssemblies = true) {
         var variable = Environment.GetEnvironmentVariable(LoadedEnvVariableName);
         if (variable != null) {
             // This assembly is being run as an isolated test, we already did
             // the generation before.
-            return;
+            return false;
         }
         
         Environment.SetEnvironmentVariable(LoadedEnvVariableName, "true");
@@ -28,5 +28,6 @@ public static class TestIsolator {
 
         var watcher = new InterceptorWatcher(testInterceptors);
         watcher.Start();
+        return true;
     }
 }

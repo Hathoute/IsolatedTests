@@ -35,7 +35,13 @@ using IsolatedTests;
 public static class TestSetup {
     [ModuleInitializer]
     internal static void ModuleInitializer() {
-        TestIsolator.ModuleInitializer();
+        if(TestIsolator.ModuleInitializer()) {
+            // Do your other one time initializations here...
+            // ex: dockerContainer.start();
+        }
+        
+        // Code here will run for each assembly load triggered by [IsolatedTest]
+        // ex: MyTestContext.parseFiles();
     }
 }
 ```
